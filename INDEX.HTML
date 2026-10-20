@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sàn Đấu Giá Kiến Thức - Hóa Học 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .auction-title {
+            font-family: 'Playfair Display', serif;
+            text-shadow: 0 4px 10px rgba(251, 191, 36, 0.3);
+        }
+
+        /* Custom Animations */
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in { animation: popIn 0.3s ease-out forwards; }
+
+        @keyframes slideUp {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .slide-up { animation: slideUp 0.4s ease-out forwards; }
+
+        @keyframes pulse-gold {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
+        }
+        .bet-selected {
+            border-color: #fbbf24 !important;
+            background: linear-gradient(135deg, #b45309 0%, #d97706 100%) !important;
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(251, 191, 36, 0.4);
+        }
+
+        .answer-btn {
+            transition: all 0.2s;
+            border: 2px solid #334155;
+        }
+        .answer-btn:hover:not(:disabled) {
+            border-color: #60a5fa;
+            background-color: #1e293b;
+        }
+        .answer-selected {
+            border-color: #3b82f6 !important;
+            background-color: #1e3a8a !important;
+            box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Glassmorphism for modals */
+        .glass-modal {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Coin burst animation */
+        .coin-anim {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            color: #fbbf24;
+            font-size: 1.5rem;
+            z-index: 50;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+        
+        /* Typography adjustments for sub text (chemical formulas) */
+        sub {
+            font-size: 0.7em;
+            bottom: -0.2em;
+            position: relative;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative">
+
+    <script>
+        const gameData = [
+            {
+                id: 1,
+                question: "Khởi động: Sulfur là nguyên tố phổ biến thứ bao nhiêu trên vỏ Trái Đất?",
+                options: ["Thứ 15", "Thứ 16", "Thứ 17", "Thứ 18"],
+                correct: 2, // C
+                hint: "Hãy nhớ lại con số nằm trong khoảng phần trăm khối lượng rất nhỏ (0,03 - 0,1%).",
+                explanation: "Theo tài liệu, Sulfur là nguyên tố phổ biến thứ 17 trên vỏ Trái Đất, chiếm khoảng 0,03 - 0,1% khối lượng.",
+                type: "Dễ"
+            },
+            {
+                id: 2,
+                question: "Ở điều kiện thường, phân tử sulfur (đơn chất) có cấu tạo như thế nào?",
+                options: ["Dạng nguyên tử S độc lập", "Dạng vòng khép kín gồm 8 nguyên tử (S<sub>8</sub>)", "Dạng chuỗi dài vô tận", "Dạng phân tử diatomic (S<sub>2</sub>)"],
+                correct: 1, // B
+                hint: "Các nguyên tử S không đứng một mình mà liên kết với nhau thành một vòng đặc trưng.",
+                explanation: "Phân tử sulfur gồm 8 nguyên tử (S<sub>8</sub>) có dạng vòng khép kín. Mỗi nguyên tử liên kết với hai nguyên tử bên cạnh bằng liên kết cộng hóa trị không phân cực.",
+                type: "Dễ"
+            },
+            {
+                id: 3, // Cạm bẫy
+                question: "🎁 [CÂU HỎI BẪY] Tính chất vật lí nào sau đây KHÔNG ĐÚNG về sulfur đơn chất?",
+                options: ["Không tan trong nước", "Tan nhiều trong alcohol", "Tan nhiều trong carbon disulfide", "Nóng chảy ở 113°C"],
+                correct: 1, // B
+                hint: "Đọc kĩ lại độ hoà tan của Sulfur trong các dung môi khác nhau. Nó tan nhiều trong chất nào và ít tan trong chất nào?",
+                explanation: "Sulfur KHÔNG tan nhiều trong alcohol (chỉ ít tan). Nó không tan trong nước, nhưng tan nhiều trong carbon disulfide.",
+                type: "Gài bẫy"
+            },
+            {
+                id: 4,
+                question: "Khi tham gia phản ứng hoá học, tính chất hoá học đặc trưng của sulfur là gì?",
+                options: ["Chỉ có tính oxi hoá", "Chỉ có tính khử", "Vừa có tính oxi hoá, vừa có tính khử", "Không có tính oxi hoá hay khử"],
+                correct: 2, // C
+                hint: "Nhớ lại các số oxi hóa có thể có của S: -2, 0, +4, +6. Nó đang ở mức 0.",
+                explanation: "Sulfur đơn chất (mức oxi hóa 0) có thể tăng lên +4, +6 (thể hiện tính khử) hoặc giảm xuống -2 (thể hiện tính oxi hóa).",
+                type: "Dễ"
+            },
+            {
+                id: 5,
+                question: "Trong phòng thí nghiệm, nếu vô tình đánh rơi nhiệt kế thuỷ ngân (Hg), ta nên dùng chất nào để xử lí an toàn?",
+                options: ["Bột sắt (Fe)", "Khí oxygen (O<sub>2</sub>)", "Nước (H<sub>2</sub>O)", "Bột sulfur (S)"],
+                correct: 3, // D
+                hint: "Phản ứng này rất đặc biệt vì nó xảy ra ngay ở nhiệt độ thường.",
+                explanation: "Sulfur tác dụng với thuỷ ngân (Hg) ngay ở nhiệt độ thường tạo thành muối sulfide (HgS) rắn, an toàn, dễ thu gom.",
+                type: "Vận dụng"
+            },
+            {
+                id: 6,
+                question: "Phát biểu nào mô tả đúng nhất tính chất vật lí của khí Sulfur dioxide (SO<sub>2</sub>)?",
+                options: ["Màu vàng lục, mùi hắc", "Không màu, không mùi", "Không màu, mùi hắc, nặng hơn không khí", "Màu nâu đỏ, rất độc"],
+                correct: 2, // C
+                hint: "SO<sub>2</sub> là khí thải quen thuộc, liệu nó có màu không? Trọng lượng của nó so với không khí (M=29) như thế nào?",
+                explanation: "SO<sub>2</sub> (M=64) là chất khí không màu, nặng hơn không khí, mùi hắc, độc và tan nhiều trong nước.",
+                type: "Dễ"
+            },
+            {
+                id: 7, // Cạm bẫy
+                question: "🎁 [CÂU HỎI BẪY] Xét phản ứng: SO<sub>2</sub> + 2H<sub>2</sub>S &rarr; 3S + 2H<sub>2</sub>O. Vai trò của SO<sub>2</sub> trong phản ứng này là gì?",
+                options: ["Là chất khử", "Là chất oxi hoá", "Là acid", "Là môi trường"],
+                correct: 1, // B
+                hint: "Hãy xác định sự thay đổi số oxi hoá của Sulfur trong SO<sub>2</sub> (từ +4 thành 0).",
+                explanation: "Trong SO<sub>2</sub>, S có số oxi hóa +4. Sau phản ứng tạo ra S đơn chất (0). Số oxi hoá giảm &rarr; SO<sub>2</sub> thể hiện tính oxi hoá.",
+                type: "Gài bẫy"
+            },
+            {
+                id: 8,
+                question: "Ứng dụng nào sau đây KHÔNG PHẢI là của sulfur đơn chất?",
+                options: ["Lưu hoá cao su", "Sản xuất diêm", "Tẩy trắng bột giấy", "Sản xuất thuốc trừ sâu, diệt nấm"],
+                correct: 2, // C
+                hint: "Có một ứng dụng là của hợp chất SO<sub>2</sub> chứ không phải của S đơn chất.",
+                explanation: "Tẩy trắng bột giấy là ứng dụng đặc trưng của khí Sulfur dioxide (SO<sub>2</sub>), không phải của Sulfur (S).",
+                type: "Trung bình"
+            },
+            {
+                id: 9,
+                question: "Trong công nghiệp, sulfur dioxide (SO<sub>2</sub>) lỏng là một dung môi phân cực được sử dụng để làm gì?",
+                options: ["Thực hiện nhiều phản ứng", "Tẩy trắng đường", "Sản xuất diêm", "Làm chất độn cao su"],
+                correct: 0, // A
+                hint: "Đọc kĩ phần Ứng dụng của Sulfur dioxide ở cuối mục 3.",
+                explanation: "Trong nghiên cứu, sulfur dioxide lỏng là một dung môi phân cực, được sử dụng để thực hiện nhiều phản ứng.",
+                type: "Trung bình"
+            },
+            {
+                id: 10,
+                question: "Quá trình nào sau đây là nguyên nhân tự nhiên chủ yếu phát sinh khí SO<sub>2</sub> vào bầu khí quyển?",
+                options: ["Đốt cháy nhiên liệu hoá thạch", "Luyện kim quặng sulfide", "Khí thải núi lửa", "Quá trình hô hấp của động vật"],
+                correct: 2, // C
+                hint: "Đề bài hỏi về nguyên nhân 'tự nhiên' chứ không phải nhân tạo.",
+                explanation: "Sulfur dioxide (SO<sub>2</sub>) được sinh ra từ cả nguồn tự nhiên (chủ yếu là khí thải núi lửa) và nguồn nhân tạo (đốt nhiên liệu, luyện kim...).",
+                type: "Trung bình"
+            },
+            {
+                id: 11,
+                question: "Theo bảng quy chuẩn (QCVN 05:2013/BTNMT), hàm lượng tối đa của SO<sub>2</sub> cho phép trong không khí (Trung bình 24 giờ) là bao nhiêu µg/m³?",
+                options: ["50 µg/m³", "100 µg/m³", "125 µg/m³", "200 µg/m³"],
+                correct: 2, // C
+                hint: "Nhìn vào bảng 7.1 'Em có biết' góc trên bên phải của tài liệu.",
+                explanation: "Hàm lượng tối đa cho phép của SO<sub>2</sub> trung bình 24 giờ là 125 µg/m³, trung bình năm là 50 µg/m³.",
+                type: "Chi tiết"
+            },
+            {
+                id: 12,
+                question: "Để cắt giảm sự phát thải SO<sub>2</sub> vào khí quyển, biện pháp nào sau đây là KHÔNG HỢP LÍ?",
+                options: ["Tăng cường sử dụng năng lượng tái tạo", "Xử lí khí thải trước khi xả ra môi trường", "Cải tiến công nghệ sản xuất", "Tăng cường đốt than đá thay thế dầu mỏ"],
+                correct: 3, // D
+                hint: "Than đá chứa rất nhiều tạp chất sulfur, việc đốt than đá sẽ làm tăng hay giảm SO<sub>2</sub>?",
+                explanation: "Đốt than đá là một trong những nguồn phát thải SO<sub>2</sub> lớn nhất. Để giảm SO<sub>2</sub>, ta phải hạn chế đốt than đá, thay bằng năng lượng sạch.",
+                type: "Vận dụng"
+            }
+        ];
+    </script>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="flex-1 flex flex-col items-center justify-center p-6 text-center z-10">
+        <div class="max-w-md w-full bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl pop-in">
+            <i class="fas fa-user-graduate text-6xl text-amber-400 mb-4"></i>
+            <h1 class="text-3xl font-bold auction-title mb-6">ĐĂNG NHẬP HỌC VIÊN</h1>
+            
+            <div class="space-y-4 mb-8 text-left">
+                <div>
+                    <label class="block text-slate-300 text-sm font-bold mb-2" for="player-name">Họ và Tên</label>
+                    <input class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white focus:outline-none focus:border-amber-400 transition" id="player-name" type="text" placeholder="Nhập họ và tên của em...">
+                </div>
+                <div>
+                    <label class="block text-slate-300 text-sm font-bold mb-2" for="player-class">Lớp</label>
+                    <input class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white focus:outline-none focus:border-amber-400 transition" id="player-class" type="text" placeholder="Ví dụ: 11A1...">
+                </div>
+                <p id="login-error" class="text-red-400 text-sm hidden mt-2"><i class="fas fa-exclamation-circle"></i> Vui lòng nhập đầy đủ Họ Tên và Lớp!</p>
+            </div>
+
+            <button onclick="submitLogin()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg">
+                VÀO SÀN ĐẤU GIÁ <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Intro Screen -->
+    <div id="intro-screen" class="hidden flex-1 flex flex-col items-center justify-center p-6 text-center z-10">
+        <div class="max-w-2xl bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl pop-in">
+            <i class="fas fa-gavel text-6xl text-amber-400 mb-4"></i>
+            <h1 class="text-4xl font-bold auction-title mb-2">SÀN ĐẤU GIÁ KIẾN THỨC</h1>
+            <h2 class="text-xl text-blue-300 mb-6">Chuyên đề: Sulfur & Sulfur Dioxide (Lớp 11)</h2>
+            
+            <div class="text-left bg-slate-900 p-6 rounded-xl text-slate-300 mb-8 space-y-4">
+                <p><i class="fas fa-coins text-amber-400 w-6"></i> <strong>Vốn ban đầu:</strong> 1.000 Xu Kiến Thức.</p>
+                <p><i class="fas fa-hand-holding-usd text-green-400 w-6"></i> <strong>Luật chơi:</strong> Trước khi chốt đáp án, bạn <b>BẮT BUỘC</b> phải chọn mức cược thể hiện sự tự tin (100 xu, 300 xu, 500 xu). Đúng được cộng, sai bị trừ.</p>
+                <p><i class="fas fa-fire text-red-400 w-6"></i> <strong>Cược lớn:</strong> Nếu cược 500 xu, bạn phải tự giải thích lý do chọn đáp án để chứng minh mình thực sự hiểu bài!</p>
+                <p><i class="fas fa-shield-alt text-blue-400 w-6"></i> <strong>Quyền Bảo Toàn:</strong> 1 lần duy nhất trong game, dùng để giữ nguyên số xu nếu lỡ trả lời sai.</p>
+            </div>
+
+            <button onclick="startGame()" class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold py-4 px-12 rounded-full text-xl transition transform hover:scale-105 shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+                BƯỚC VÀO SÀN ĐẤU GIÁ
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden flex-1 flex flex-col max-w-4xl mx-auto w-full p-4 md:p-6 z-10">
+        
+        <!-- Header: Stats -->
+        <div class="flex justify-between items-center bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg mb-6 slide-up">
+            <div class="flex items-center space-x-3">
+                <div class="bg-slate-900 rounded-full p-3 relative">
+                    <i class="fas fa-coins text-amber-400 text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Tài khoản</p>
+                    <p class="text-2xl font-black text-amber-400" id="ui-coins">1000 Xu</p>
+                </div>
+            </div>
+            
+            <button id="btn-lifeline" onclick="toggleLifeline()" class="flex items-center space-x-2 bg-slate-700 hover:bg-slate-600 border border-blue-500 text-blue-300 py-2 px-4 rounded-xl transition group">
+                <i class="fas fa-shield-alt group-hover:animate-bounce"></i>
+                <span class="font-bold text-sm">Bảo Toàn Xu (1)</span>
+            </button>
+        </div>
+
+        <!-- Progress -->
+        <div class="mb-6 slide-up" style="animation-delay: 0.1s">
+            <div class="flex justify-between text-sm text-slate-400 font-bold mb-2">
+                <span id="ui-progress-text">Câu 1 / 12</span>
+                <span id="ui-question-type" class="text-purple-400">Mức độ: Dễ</span>
+            </div>
+            <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                <div id="ui-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-500" style="width: 8%"></div>
+            </div>
+        </div>
+
+        <!-- Question Area -->
+        <div class="bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-700 shadow-xl mb-6 slide-up" style="animation-delay: 0.2s">
+            <h2 id="ui-question" class="text-xl md:text-2xl font-bold leading-relaxed text-white mb-8">
+                Đang tải câu hỏi...
+            </h2>
+            
+            <div id="ui-options" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Options injected via JS -->
+            </div>
+        </div>
+
+        <!-- Betting Area -->
+        <div class="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl slide-up" style="animation-delay: 0.3s">
+            <h3 class="text-center font-bold text-slate-400 mb-4 uppercase tracking-wider text-sm">Chọn mức cược tự tin</h3>
+            <div class="grid grid-cols-3 gap-3 md:gap-6 mb-6">
+                <button onclick="selectBet(100)" id="bet-100" class="bet-btn flex flex-col items-center p-3 rounded-xl border-2 border-slate-600 hover:border-amber-400 bg-slate-900 transition">
+                    <span class="text-2xl mb-1">🪙</span>
+                    <span class="font-black text-amber-400 text-lg">100</span>
+                    <span class="text-xs text-slate-400 mt-1">Chưa chắc</span>
+                </button>
+                <button onclick="selectBet(300)" id="bet-300" class="bet-btn flex flex-col items-center p-3 rounded-xl border-2 border-slate-600 hover:border-amber-400 bg-slate-900 transition">
+                    <span class="text-2xl mb-1">💰</span>
+                    <span class="font-black text-amber-400 text-lg">300</span>
+                    <span class="text-xs text-slate-400 mt-1">Khá tự tin</span>
+                </button>
+                <button onclick="selectBet(500)" id="bet-500" class="bet-btn flex flex-col items-center p-3 rounded-xl border-2 border-slate-600 hover:border-amber-400 bg-slate-900 transition">
+                    <span class="text-2xl mb-1">🔥</span>
+                    <span class="font-black text-amber-400 text-lg">500</span>
+                    <span class="text-xs text-red-400 mt-1 font-bold">Em chắc chắn!</span>
+                </button>
+            </div>
+            
+            <button id="btn-lock" onclick="lockAnswer()" disabled class="w-full py-4 rounded-xl font-bold text-xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-slate-700 text-slate-400">
+                <i class="fas fa-lock mr-2"></i> VUI LÒNG CHỌN ĐÁP ÁN & MỨC CƯỢC
+            </button>
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="hidden flex-1 flex flex-col items-center p-4 md:p-8 z-10 overflow-y-auto">
+        <div class="w-full max-w-4xl bg-slate-800 p-6 md:p-8 rounded-3xl border border-slate-700 shadow-2xl pop-in">
+            <h1 class="text-3xl md:text-4xl font-bold auction-title text-center mb-2">TỔNG KẾT PHIÊN ĐẤU GIÁ</h1>
+            <p class="text-center text-amber-400 font-bold mb-1 text-xl" id="res-student-info">Học sinh: ... - Lớp: ...</p>
+            <p class="text-center text-slate-400 mb-8">Đánh giá năng lực và sự tự tin của bạn</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 text-center">
+                    <i class="fas fa-coins text-amber-400 text-4xl mb-3"></i>
+                    <p class="text-slate-400 text-sm font-bold uppercase">Tổng tài sản</p>
+                    <p id="res-coins" class="text-3xl font-black text-white">0 Xu</p>
+                </div>
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 text-center">
+                    <i class="fas fa-check-circle text-green-400 text-4xl mb-3"></i>
+                    <p class="text-slate-400 text-sm font-bold uppercase">Số câu đúng</p>
+                    <p id="res-correct" class="text-3xl font-black text-white">0/12</p>
+                </div>
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 text-center">
+                    <i class="fas fa-fire text-red-400 text-4xl mb-3"></i>
+                    <p class="text-slate-400 text-sm font-bold uppercase">Cược lớn nhất</p>
+                    <p id="res-maxbet" class="text-3xl font-black text-white">0 Xu</p>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Categories -->
+                <div class="bg-green-900/20 border border-green-800/50 p-4 rounded-xl">
+                    <h3 class="text-green-400 font-bold mb-2"><i class="fas fa-star mr-2"></i>Kiến thức nắm chắc (Cược cao + Đúng)</h3>
+                    <p id="cat-solid" class="text-sm text-slate-300 leading-relaxed"></p>
+                </div>
+                <div class="bg-yellow-900/20 border border-yellow-800/50 p-4 rounded-xl">
+                    <h3 class="text-yellow-400 font-bold mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Biết nhưng chưa chắc chắn (Cược thấp + Đúng)</h3>
+                    <p id="cat-unsure" class="text-sm text-slate-300 leading-relaxed"></p>
+                </div>
+                <div class="bg-red-900/20 border border-red-800/50 p-4 rounded-xl">
+                    <h3 class="text-red-400 font-bold mb-2"><i class="fas fa-radiation mr-2"></i>Tưởng biết nhưng sai (Cược cao + Sai) - CẦN ÔN LẠI NGAY!</h3>
+                    <p id="cat-review" class="text-sm text-slate-300 leading-relaxed"></p>
+                </div>
+                <div class="bg-blue-900/20 border border-blue-800/50 p-4 rounded-xl">
+                    <h3 class="text-blue-400 font-bold mb-2"><i class="fas fa-shield-alt mr-2"></i>Sử dụng quyền Bảo Toàn</h3>
+                    <p id="cat-lifeline" class="text-sm text-slate-300 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <!-- ADDED: Nút Gửi Kết Quả -->
+            <div class="mt-8 bg-slate-900 p-6 rounded-2xl border border-slate-700 text-center" id="submit-section">
+                <p class="text-slate-300 mb-4 text-sm">Gửi báo cáo kết quả này về hệ thống cho giáo viên.</p>
+                <button id="btn-submit" onclick="submitToGoogleSheets()" class="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-3 px-8 rounded-xl transition shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                    <i class="fas fa-paper-plane mr-2"></i> GỬI KẾT QUẢ CHO GIÁO VIÊN
+                </button>
+                <p id="submit-status" class="text-sm mt-3 hidden font-bold"></p>
+            </div>
+
+            <div class="mt-6 text-center">
+                <button onclick="location.reload()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-full transition">
+                    <i class="fas fa-redo mr-2"></i> CHƠI LẠI TỪ ĐẦU
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 500 Bet Explanation Prompt -->
+    <div id="modal-explain-bet" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 glass-modal">
+        <div class="bg-slate-800 p-6 md:p-8 rounded-2xl border border-red-500/50 shadow-2xl max-w-lg w-full pop-in">
+            <div class="text-center mb-6">
+                <i class="fas fa-fire text-5xl text-red-500 mb-4 animate-pulse"></i>
+                <h3 class="text-2xl font-bold text-white mb-2">EM ĐÃ CƯỢC RẤT LỚN!</h3>
+                <p class="text-slate-300 text-sm">Để nhận 500 xu, em phải chứng minh mình hiểu bản chất. Hãy giải thích ngắn gọn vì sao em chọn đáp án này?</p>
+            </div>
+            <textarea id="input-explanation" rows="3" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-4 text-white focus:outline-none focus:border-amber-400 transition" placeholder="Gõ lời giải thích của em vào đây (ít nhất 10 ký tự)..."></textarea>
+            <p id="explain-error" class="text-red-400 text-sm mt-2 hidden"><i class="fas fa-times-circle"></i> Vui lòng giải thích chi tiết hơn (ít nhất 10 ký tự).</p>
+            <button onclick="submitExplanation()" class="w-full mt-6 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-3 rounded-xl transition shadow-lg">
+                CHỐT GIẢI THÍCH & XEM KẾT QUẢ
+            </button>
+        </div>
+    </div>
+
+    <!-- Hint Modal (When wrong) -->
+    <div id="modal-hint" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 glass-modal">
+        <div class="bg-slate-800 p-6 md:p-8 rounded-2xl border border-amber-500/50 shadow-2xl max-w-lg w-full pop-in text-center">
+            <i class="fas fa-lightbulb text-5xl text-amber-400 mb-4 animate-bounce"></i>
+            <h3 class="text-2xl font-bold text-white mb-2" id="hint-title">Ôi Không! Em Đã Sai!</h3>
+            <p class="text-red-400 font-bold mb-6" id="hint-deduct">-300 Xu</p>
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 mb-6 text-left">
+                <p class="text-sm text-amber-200 font-bold mb-1">GỢI Ý SUY NGHĨ LẠI:</p>
+                <p id="hint-text" class="text-slate-300 leading-relaxed"></p>
+            </div>
+            <button onclick="showFinalExplanation()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition w-full">
+                EM ĐÃ SUY NGHĨ XONG - XEM ĐÁP ÁN ĐÚNG
+            </button>
+        </div>
+    </div>
+
+    <!-- Final Explanation Modal (After correct or after hint) -->
+    <div id="modal-final" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 glass-modal">
+        <div class="bg-slate-800 p-6 md:p-8 rounded-2xl border border-blue-500/50 shadow-2xl max-w-lg w-full pop-in text-center">
+            <div id="final-icon" class="mb-4"></div>
+            <h3 class="text-2xl font-bold text-white mb-2" id="final-title">Chính Xác!</h3>
+            <p class="text-green-400 font-bold mb-6 text-xl" id="final-reward">+300 Xu</p>
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 mb-6 text-left">
+                <p class="text-sm text-blue-300 font-bold mb-1">GIẢI THÍCH CHI TIẾT:</p>
+                <p id="final-text" class="text-slate-300 leading-relaxed"></p>
+            </div>
+            <button onclick="nextQuestion()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition w-full">
+                TIẾP TỤC ĐẤU GIÁ <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let playerName = "";
+        let playerClass = "";
+        let coins = 1000;
+        let currentQuestionIndex = 0;
+        let selectedOptionIndex = null;
+        let currentBet = 0;
+        let hasLifeline = true;
+        let isLifelineActive = false;
+        let history = []; // To track answers
+        
+        // Sound Engine (Tone.js wrapper to avoid errors before interaction)
+        let synth, coinSynth, errorSynth;
+        let isAudioInit = false;
+
+        function initAudio() {
+            if(isAudioInit) return;
+            Tone.start();
+            synth = new Tone.Synth().toDestination();
+            coinSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+            errorSynth = new Tone.Synth({
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.1, decay: 0.2, sustain: 0.1, release: 0.5 }
+            }).toDestination();
+            isAudioInit = true;
+        }
+
+        function playSound(type) {
+            if(!isAudioInit) return;
+            switch(type) {
+                case 'click': synth.triggerAttackRelease("C5", "32n"); break;
+                case 'bet': synth.triggerAttackRelease("G4", "16n"); break;
+                case 'lock': synth.triggerAttackRelease("E5", "16n"); break;
+                case 'correct': 
+                    coinSynth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+                    break;
+                case 'wrong':
+                    errorSynth.triggerAttackRelease("C3", "4n");
+                    break;
+                case 'shield':
+                    coinSynth.triggerAttackRelease(["C4", "G4", "C5"], "8n");
+                    break;
+            }
+        }
+
+        function spawnCoins() {
+            for(let i=0; i<5; i++) {
+                const coin = document.createElement('div');
+                coin.innerHTML = '<i class="fas fa-coins"></i>';
+                coin.className = 'coin-anim';
+                coin.style.left = (40 + Math.random()*20) + '%';
+                coin.style.top = '50%';
+                document.body.appendChild(coin);
+                setTimeout(() => coin.remove(), 1000);
+            }
+        }
+
+        // Core Functions
+        function submitLogin() {
+            initAudio(); // Bật audio context ngay từ cú click đầu tiên
+            const nameInput = document.getElementById('player-name').value.trim();
+            const classInput = document.getElementById('player-class').value.trim();
+            
+            if (!nameInput || !classInput) {
+                document.getElementById('login-error').classList.remove('hidden');
+                playSound('wrong');
+                return;
+            }
+            
+            playerName = nameInput;
+            playerClass = classInput;
+            playSound('click');
+            
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('intro-screen').classList.remove('hidden');
+        }
+
+        function startGame() {
+            initAudio();
+            document.getElementById('intro-screen').style.display = 'none';
+            document.getElementById('game-screen').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            // Reset state for new question
+            selectedOptionIndex = null;
+            currentBet = 0;
+            isLifelineActive = false;
+            
+            // UI Resets
+            updateLifelineUI();
+            document.querySelectorAll('.bet-btn').forEach(btn => btn.classList.remove('bet-selected'));
+            updateLockButton();
+            
+            const q = gameData[currentQuestionIndex];
+            
+            // Update Progress
+            document.getElementById('ui-progress-text').innerText = `Câu ${currentQuestionIndex + 1} / ${gameData.length}`;
+            document.getElementById('ui-progress-bar').style.width = `${((currentQuestionIndex) / gameData.length) * 100}%`;
+            document.getElementById('ui-question-type').innerText = `Mức độ: ${q.type}`;
+            
+            // Update Question Text (use innerHTML to render <sub> tags)
+            document.getElementById('ui-question').innerHTML = q.question;
+            
+            // Generate Options
+            const optionsContainer = document.getElementById('ui-options');
+            optionsContainer.innerHTML = '';
+            
+            const labels = ['A', 'B', 'C', 'D'];
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn w-full text-left p-4 rounded-xl bg-slate-900 text-slate-200 flex items-center hover:bg-slate-800';
+                btn.onclick = () => selectAnswer(idx);
+                // Use innerHTML instead of innerText to render <sub> tags inside options
+                btn.innerHTML = `<span class="w-8 h-8 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center font-bold mr-4 shrink-0">${labels[idx]}</span> <span class="leading-relaxed">${opt}</span>`;
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectAnswer(idx) {
+            playSound('click');
+            selectedOptionIndex = idx;
+            
+            const btns = document.getElementById('ui-options').children;
+            for(let i=0; i<btns.length; i++) {
+                btns[i].classList.remove('answer-selected');
+                btns[i].children[0].classList.replace('bg-blue-500', 'bg-slate-700');
+                btns[i].children[0].classList.replace('text-white', 'text-slate-300');
+            }
+            
+            btns[idx].classList.add('answer-selected');
+            btns[idx].children[0].classList.replace('bg-slate-700', 'bg-blue-500');
+            btns[idx].children[0].classList.replace('text-slate-300', 'text-white');
+            
+            updateLockButton();
+        }
+
+        function selectBet(amount) {
+            playSound('bet');
+            currentBet = amount;
+            
+            document.querySelectorAll('.bet-btn').forEach(btn => btn.classList.remove('bet-selected'));
+            document.getElementById(`bet-${amount}`).classList.add('bet-selected');
+            
+            updateLockButton();
+        }
+
+        function updateLockButton() {
+            const btn = document.getElementById('btn-lock');
+            if(selectedOptionIndex !== null && currentBet > 0) {
+                btn.disabled = false;
+                btn.className = "w-full py-4 rounded-xl font-bold text-xl transition duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]";
+                btn.innerHTML = `<i class="fas fa-gavel mr-2"></i> CHỐT ĐÁP ÁN KÈM CƯỢC ${currentBet} XU`;
+            } else {
+                btn.disabled = true;
+                btn.className = "w-full py-4 rounded-xl font-bold text-xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-slate-700 text-slate-400";
+                btn.innerHTML = `<i class="fas fa-lock mr-2"></i> VUI LÒNG CHỌN ĐÁP ÁN & MỨC CƯỢC`;
+            }
+        }
+
+        function toggleLifeline() {
+            if(!hasLifeline) return;
+            playSound('shield');
+            isLifelineActive = !isLifelineActive;
+            updateLifelineUI();
+        }
+
+        function updateLifelineUI() {
+            const btn = document.getElementById('btn-lifeline');
+            if(!hasLifeline) {
+                btn.className = "flex items-center space-x-2 bg-slate-800 text-slate-600 py-2 px-4 rounded-xl cursor-not-allowed opacity-50";
+                btn.innerHTML = `<i class="fas fa-shield-alt"></i><span class="font-bold text-sm">Đã Dùng</span>`;
+                return;
+            }
+            
+            if(isLifelineActive) {
+                btn.className = "flex items-center space-x-2 bg-blue-600 border border-blue-400 text-white py-2 px-4 rounded-xl transition shadow-[0_0_15px_rgba(59,130,246,0.6)]";
+                btn.innerHTML = `<i class="fas fa-shield-check"></i><span class="font-bold text-sm">Đang Bật Bảo Toàn</span>`;
+            } else {
+                btn.className = "flex items-center space-x-2 bg-slate-700 hover:bg-slate-600 border border-blue-500 text-blue-300 py-2 px-4 rounded-xl transition group";
+                btn.innerHTML = `<i class="fas fa-shield-alt group-hover:animate-bounce"></i><span class="font-bold text-sm">Bảo Toàn Xu (1)</span>`;
+            }
+        }
+
+        function lockAnswer() {
+            playSound('lock');
+            if(currentBet === 500) {
+                // Show prompt for 500
+                document.getElementById('input-explanation').value = '';
+                document.getElementById('explain-error').classList.add('hidden');
+                document.getElementById('modal-explain-bet').classList.remove('hidden');
+            } else {
+                evaluateAnswer();
+            }
+        }
+
+        function submitExplanation() {
+            const text = document.getElementById('input-explanation').value.trim();
+            if(text.length < 10) {
+                document.getElementById('explain-error').classList.remove('hidden');
+                playSound('wrong');
+                return;
+            }
+            document.getElementById('modal-explain-bet').classList.add('hidden');
+            evaluateAnswer(text);
+        }
+
+        function evaluateAnswer(explanation = "") {
+            const q = gameData[currentQuestionIndex];
+            const isCorrect = (selectedOptionIndex === q.correct);
+            
+            // Record history
+            history.push({
+                qId: q.id,
+                question: q.question, // this now has <sub> tags so it will render properly in history UI if needed
+                bet: currentBet,
+                isCorrect: isCorrect,
+                usedLifeline: isLifelineActive,
+                explanation: explanation
+            });
+
+            if (isLifelineActive) {
+                hasLifeline = false;
+            }
+
+            if(isCorrect) {
+                // Correct logic
+                playSound('correct');
+                spawnCoins();
+                coins += currentBet;
+                showFinalExplanationModal(true, currentBet);
+            } else {
+                // Wrong logic
+                playSound('wrong');
+                if (isLifelineActive) {
+                    // Saved by lifeline
+                    showFinalExplanationModal(false, 0, true);
+                } else {
+                    coins -= currentBet;
+                    showHintModal();
+                }
+            }
+            
+            updateCoinsUI();
+        }
+
+        function updateCoinsUI() {
+            const el = document.getElementById('ui-coins');
+            el.innerText = `${coins} Xu`;
+            if(coins < 0) el.classList.replace('text-amber-400', 'text-red-500');
+            else el.classList.replace('text-red-500', 'text-amber-400');
+        }
+
+        function showHintModal() {
+            const q = gameData[currentQuestionIndex];
+            document.getElementById('hint-deduct').innerText = `Bị trừ ${currentBet} Xu`;
+            // Use innerHTML for hints to render <sub>
+            document.getElementById('hint-text').innerHTML = q.hint;
+            document.getElementById('modal-hint').classList.remove('hidden');
+        }
+
+        function showFinalExplanation() {
+            document.getElementById('modal-hint').classList.add('hidden');
+            showFinalExplanationModal(false, currentBet);
+        }
+
+        function showFinalExplanationModal(isCorrect, changeAmount, savedByLifeline = false) {
+            const q = gameData[currentQuestionIndex];
+            const modal = document.getElementById('modal-final');
+            const icon = document.getElementById('final-icon');
+            const title = document.getElementById('final-title');
+            const reward = document.getElementById('final-reward');
+            const text = document.getElementById('final-text');
+
+            if(isCorrect) {
+                icon.innerHTML = '<i class="fas fa-check-circle text-6xl text-green-400 animate-bounce"></i>';
+                title.innerText = 'CHÍNH XÁC!';
+                title.className = 'text-3xl font-bold text-green-400 mb-2';
+                reward.innerText = `+${changeAmount} Xu`;
+                reward.className = 'text-green-400 font-bold mb-6 text-2xl';
+            } else {
+                icon.innerHTML = '<i class="fas fa-times-circle text-6xl text-red-500"></i>';
+                title.innerText = 'RẤT TIẾC, VẪN CHƯA ĐÚNG!';
+                title.className = 'text-3xl font-bold text-red-400 mb-2';
+                if(savedByLifeline) {
+                    reward.innerText = `Bảo toàn thành công! (Không mất xu)`;
+                    reward.className = 'text-blue-400 font-bold mb-6 text-xl';
+                } else {
+                    reward.innerText = `Đã trừ ${changeAmount} Xu`;
+                    reward.className = 'text-red-500 font-bold mb-6 text-xl opacity-70';
+                }
+            }
+
+            // Use innerHTML to render <sub> correctly
+            text.innerHTML = `<strong>Đáp án đúng là: ${String.fromCharCode(65 + q.correct)}. ${q.options[q.correct]}</strong><br><br>${q.explanation}`;
+            modal.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            document.getElementById('modal-final').classList.add('hidden');
+            currentQuestionIndex++;
+            
+            if(currentQuestionIndex >= gameData.length) {
+                endGame();
+            } else {
+                loadQuestion();
+            }
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            // Điền thông tin học sinh
+            document.getElementById('res-student-info').innerText = `Học sinh: ${playerName} - Lớp: ${playerClass}`;
+            
+            document.getElementById('res-coins').innerText = `${coins} Xu`;
+            if(coins < 0) document.getElementById('res-coins').classList.replace('text-white', 'text-red-500');
+            
+            let correctCount = 0;
+            let maxBet = 0;
+            
+            let catSolid = [];
+            let catUnsure = [];
+            let catReview = [];
+            let catLifeline = "Chưa sử dụng";
+
+            history.forEach((record, idx) => {
+                if(record.isCorrect) correctCount++;
+                if(record.bet > maxBet) maxBet = record.bet;
+                
+                if(record.usedLifeline) {
+                    catLifeline = `Câu ${idx+1}: ${record.question}`;
+                }
+
+                if(record.isCorrect && record.bet >= 300) {
+                    catSolid.push(`Câu ${idx+1}`);
+                } else if(record.isCorrect && record.bet == 100) {
+                    catUnsure.push(`Câu ${idx+1}`);
+                } else if(!record.isCorrect && record.bet >= 300) {
+                    catReview.push(`Câu ${idx+1}: ${record.question}`);
+                }
+            });
+
+            document.getElementById('res-correct').innerText = `${correctCount}/${gameData.length}`;
+            document.getElementById('res-maxbet').innerText = `${maxBet} Xu`;
+
+            // Fill categories
+            document.getElementById('cat-solid').innerHTML = catSolid.length > 0 ? catSolid.join(', ') : "Chưa có dữ liệu.";
+            document.getElementById('cat-unsure').innerHTML = catUnsure.length > 0 ? catUnsure.join(', ') : "Không có.";
+            
+            if(catReview.length > 0) {
+                document.getElementById('cat-review').innerHTML = catReview.map(q => `• ${q}`).join('<br>');
+            } else {
+                document.getElementById('cat-review').innerHTML = "Tuyệt vời! Không có câu nào bạn 'tưởng biết mà sai'.";
+            }
+            
+            document.getElementById('cat-lifeline').innerHTML = catLifeline;
+            playSound(correctCount > 6 ? 'correct' : 'click');
+        }
+
+        // HÀM MỚI: Gửi dữ liệu về Google Sheets
+        function submitToGoogleSheets() {
+            const btn = document.getElementById('btn-submit');
+            const statusText = document.getElementById('submit-status');
+            
+            // Đổi trạng thái UI thành đang tải
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ĐANG GỬI...`;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            statusText.classList.remove('hidden');
+            statusText.className = 'text-sm mt-3 text-amber-400 font-bold';
+            statusText.innerText = 'Đang kết nối với hệ thống...';
+
+            // Tính toán số liệu
+            let correctCount = 0;
+            history.forEach(record => { if(record.isCorrect) correctCount++; });
+            
+            const totalCount = gameData.length;
+            const wrongCount = history.length - correctCount;
+            const skippedCount = totalCount - history.length; // Trong trường hợp học sinh bỏ dở game
+
+            // ! QUAN TRỌNG: Đường link Web App của bạn
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbzteEmu4Lt0jD-CLenFBou-f60cJxtmbUSXQpR2KRWCqeA89Z9ZsEVf9aQixz1d_xyy/exec';
+
+            // Gói dữ liệu thành tham số URL cho phương thức GET
+            const params = new URLSearchParams({
+                name: playerName,
+                className: playerClass,
+                score: coins,
+                correctCount: correctCount,
+                wrongCount: wrongCount,
+                skippedCount: skippedCount,
+                totalCount: totalCount
+            });
+
+            // Gửi qua Fetch API (Sử dụng GET để bắt lỗi chính xác và vượt rào CORS)
+            fetch(scriptURL + "?" + params.toString(), {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    btn.innerHTML = `<i class="fas fa-check mr-2"></i> ĐÃ GỬI THÀNH CÔNG`;
+                    btn.classList.replace('from-emerald-500', 'from-slate-600');
+                    btn.classList.replace('to-teal-600', 'to-slate-700');
+                    statusText.className = 'text-sm mt-3 text-green-400 font-bold';
+                    statusText.innerText = 'Dữ liệu đã được lưu vào file Google Sheets của giáo viên!';
+                } else {
+                    // Nếu Google Sheet báo lỗi (ví dụ sai tên sheet, chưa phân quyền...)
+                    throw new Error(data.message || "Lỗi không xác định từ Google Sheets");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error.message);
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> THỬ GỬI LẠI`;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                statusText.className = 'text-sm mt-3 text-red-400 font-bold';
+                statusText.innerText = 'Từ chối nhận: ' + error.message; // In thẳng lỗi ra màn hình để ta biết đường sửa
+            });
+        }
+    </script>
+</body>
+</html>
